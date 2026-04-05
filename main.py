@@ -3,7 +3,7 @@ import re
 import sqlite3
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI, Header, Request
+from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 
 DB_PATH = "users.db"
@@ -140,8 +140,8 @@ async def signup(request: Request):
 
 # GET /users/{user_id}
 @app.get("/users/{user_id}")
-async def get_user(user_id: str, authorization: str | None = Header(default=None)):
-    authed = authenticate(authorization)
+async def get_user(user_id: str, request: Request):
+    authed = authenticate(request.headers.get("authorization"))
     if authed is None:
         return JSONResponse(status_code=401, content={"message": "Authentication Failed"})
 
@@ -157,8 +157,8 @@ async def get_user(user_id: str, authorization: str | None = Header(default=None
 
 # PATCH /users/{user_id}
 @app.patch("/users/{user_id}")
-async def update_user(user_id: str, request: Request, authorization: str | None = Header(default=None)):
-    authed = authenticate(authorization)
+async def update_user(user_id: str, request: Request):
+    authed = authenticate(request.headers.get("authorization"))
     if authed is None:
         return JSONResponse(status_code=401, content={"message": "Authentication Failed"})
 
@@ -234,8 +234,8 @@ async def update_user(user_id: str, request: Request, authorization: str | None 
 
 # POST /close
 @app.post("/close")
-async def close(authorization: str | None = Header(default=None)):
-    authed = authenticate(authorization)
+async def close(request: Request):
+    authed = authenticate(request.headers.get("authorization"))
     if authed is None:
         return JSONResponse(status_code=401, content={"message": "Authentication Failed"})
 
