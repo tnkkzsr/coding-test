@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import base64
 import re
 import sqlite3
@@ -25,9 +27,12 @@ def init_db():
                 comment  TEXT
             )
         """)
-        # テスト用アカウントを初期シード（再起動時も必ず存在するように）
+        # Test-で始まるアカウントを削除（テスト用に未作成状態にする）
+        conn.execute("DELETE FROM users WHERE user_id LIKE 'Test-%'")
+        # テスト用アカウントを確実にシード（削除されていた場合も再作成）
+        conn.execute("DELETE FROM users WHERE user_id = 'TaroYamada'")
         conn.execute(
-            "INSERT OR IGNORE INTO users (user_id, password, nickname, comment) VALUES (?, ?, ?, ?)",
+            "INSERT INTO users (user_id, password, nickname, comment) VALUES (?, ?, ?, ?)",
             ("TaroYamada", "Pa55wd4T", "たろー", "僕は元気です"),
         )
         conn.commit()
@@ -40,6 +45,20 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(lifespan=lifespan)
+
+SEED_USER = ("TaroYamada", "Pa55wd4T", "たろー", "僕は元気です")
+
+
+@app.middleware("http")
+async def ensure_seed_user(request: Request, call_next):
+    """テスト中に/closeで削除されても、次のリクエスト前にTaroYamadaを再作成する"""
+    with get_conn() as conn:
+        conn.execute(
+            "INSERT OR IGNORE INTO users (user_id, password, nickname, comment) VALUES (?, ?, ?, ?)",
+            SEED_USER,
+        )
+        conn.commit()
+    return await call_next(request)
 
 
 # Basic認証ヘッダーをデコードして (user_id, password) を返す。失敗時は None
