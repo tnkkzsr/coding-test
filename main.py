@@ -44,7 +44,7 @@ async def lifespan(app: FastAPI):
     yield
 
 
-app = FastAPI(lifespan=lifespan)
+app = FastAPI(lifespan=lifespan, redirect_slashes=False)
 
 SEED_USER = ("TaroYamada", "Pa55wd4T", "たろー", "僕は元気です")
 
@@ -104,6 +104,7 @@ def user_response(user: sqlite3.Row) -> dict:
 
 # POST /signup
 @app.post("/signup")
+@app.post("/signup/")
 async def signup(request: Request):
     body = await request.json() if request.headers.get("content-type", "").startswith("application/json") else {}
 
@@ -159,6 +160,7 @@ async def signup(request: Request):
 
 # GET /users/{user_id}
 @app.get("/users/{user_id}")
+@app.get("/users/{user_id}/")
 async def get_user(user_id: str, request: Request):
     authed = authenticate(request.headers.get("authorization"))
     if authed is None:
@@ -176,6 +178,7 @@ async def get_user(user_id: str, request: Request):
 
 # PATCH /users/{user_id}
 @app.patch("/users/{user_id}")
+@app.patch("/users/{user_id}/")
 async def update_user(user_id: str, request: Request):
     authed = authenticate(request.headers.get("authorization"))
     if authed is None:
@@ -253,6 +256,7 @@ async def update_user(user_id: str, request: Request):
 
 # POST /close
 @app.post("/close")
+@app.post("/close/")
 async def close(request: Request):
     authed = authenticate(request.headers.get("authorization"))
     if authed is None:
